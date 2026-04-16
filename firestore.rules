@@ -1,0 +1,123 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: clientes
+    // Fields: nome (string), cpf_cnpj (string), telefone (string), endereco (string), 
+    //         saldo_devedor (number), ultima_os (timestamp)
+    //
+    // Collection: estoque
+    // Fields: descricao (string), codigo_barras (string), ncm (string), 
+    //         qtd_atual (number), preco_venda (number), preco_custo (number)
+    //
+    // Collection: ordens_servico
+    // Fields: cliente_id (string), veiculo (string), itens (list), mao_de_obra (number), 
+    //         total_geral (number), valor_pago (number), status_financeiro (string), 
+    //         status_os (string), data_criacao (timestamp)
+    //
+    // Collection: financeiro
+    // Fields: cliente_id (string), os_id (string), valor (number), data (timestamp), 
+    //         tipo_pagamento (string)
+    //
+    // Collection: users
+    // Fields: email (string), role (string)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.email == "6snailiw@gmail.com" || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidCliente(data) {
+      return data.nome is string && data.nome.size() > 0 &&
+             (!('saldo_devedor' in data) || data.saldo_devedor is number);
+    }
+
+    function isValidProduto(data) {
+      return data.descricao is string && data.descricao.size() > 0 &&
+             (!('qtd_atual' in data) || data.qtd_atual is number) &&
+             (!('preco_venda' in data) || data.preco_venda is number);
+    }
+
+    function isValidOS(data) {
+      return data.cliente_id is string &&
+             data.total_geral is number &&
+             data.status_os in ['aberta', 'finalizada'] &&
+             data.status_financeiro in ['pago', 'pendente', 'parcial'];
+    }
+
+    function isValidFinanceiro(data) {
+      return data.cliente_id is string &&
+             data.valor is number;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /clientes/{clienteId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && isValidCliente(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /estoque/{produtoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidProduto(request.resource.data);
+      allow update: if isAuthenticated() && isValidProduto(request.resource.data) && (
+        request.resource.data.preco_custo == resource.data.preco_custo || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    match /ordens_servico/{osId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidOS(request.resource.data);
+      allow update: if isAuthenticated() && isValidOS(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /financeiro/{transacaoId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidFinanceiro(request.resource.data);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

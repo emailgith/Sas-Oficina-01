@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  :root {
+    --bg-body: #0A0B0E;
+    --bg-sidebar: #121418;
+    --bg-card: #1C1F26;
+    --accent-orange: #FF6B00;
+    --accent-blue: #0085FF;
+    --text-primary: #F8F9FA;
+    --text-secondary: #9BA1A6;
+    --border-color: #2D333B;
+    --danger: #FF4D4D;
+    --success: #27C485;
+  }
+
+  body {
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+  }
+}
+
+@layer components {
+  .card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+  }
+
+  .btn-primary {
+    background-color: var(--accent-orange);
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.1);
+  }
+
+  .btn-outline {
+    background-color: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+  }
+
+  .btn-outline:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+}

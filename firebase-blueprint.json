@@ -1,0 +1,90 @@
+{
+  "entities": {
+    "Cliente": {
+      "title": "Cliente",
+      "description": "Informações do cliente da oficina",
+      "type": "object",
+      "properties": {
+        "nome": { "type": "string", "description": "Nome completo ou razão social" },
+        "cpf_cnpj": { "type": "string", "description": "CPF ou CNPJ para faturamento" },
+        "telefone": { "type": "string", "description": "Telefone de contato" },
+        "endereco": { "type": "string", "description": "Endereço completo" },
+        "saldo_devedor": { "type": "number", "description": "Valor total pendente de pagamento" },
+        "ultima_os": { "type": "string", "format": "date-time", "description": "Timestamp da última ordem de serviço" }
+      },
+      "required": ["nome", "cpf_cnpj", "saldo_devedor"]
+    },
+    "Produto": {
+      "title": "Produto",
+      "description": "Item em estoque",
+      "type": "object",
+      "properties": {
+        "descricao": { "type": "string", "description": "Descrição do produto" },
+        "codigo_barras": { "type": "string", "description": "Código de barras para busca" },
+        "ncm": { "type": "string", "description": "Nomenclatura Comum do Mercosul" },
+        "qtd_atual": { "type": "number", "description": "Quantidade em estoque" },
+        "preco_venda": { "type": "number", "description": "Preço de venda ao cliente" },
+        "preco_custo": { "type": "number", "description": "Preço de custo do fornecedor" }
+      },
+      "required": ["descricao", "codigo_barras", "qtd_atual", "preco_venda"]
+    },
+    "OrdemServico": {
+      "title": "Ordem de Serviço",
+      "description": "Registro de serviço e venda de peças",
+      "type": "object",
+      "properties": {
+        "cliente_id": { "type": "string", "description": "ID do cliente" },
+        "veiculo": { "type": "string", "description": "Identificação do veículo (Placa/Modelo)" },
+        "itens": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "prod_id": { "type": "string" },
+              "desc": { "type": "string" },
+              "qtd": { "type": "number" },
+              "preco_unit": { "type": "number" }
+            }
+          }
+        },
+        "mao_de_obra": { "type": "number", "description": "Valor da mão de obra" },
+        "total_geral": { "type": "number", "description": "Valor total da OS" },
+        "valor_pago": { "type": "number", "description": "Valor já pago pelo cliente" },
+        "status_financeiro": { "type": "string", "enum": ["pago", "pendente", "parcial"] },
+        "status_os": { "type": "string", "enum": ["aberta", "finalizada"] },
+        "data_criacao": { "type": "string", "format": "date-time" }
+      },
+      "required": ["cliente_id", "total_geral", "status_os"]
+    },
+    "Financeiro": {
+      "title": "Registro Financeiro",
+      "description": "Entrada de valores no caixa",
+      "type": "object",
+      "properties": {
+        "cliente_id": { "type": "string" },
+        "os_id": { "type": "string" },
+        "valor": { "type": "number" },
+        "data": { "type": "string", "format": "date-time" },
+        "tipo_pagamento": { "type": "string", "enum": ["pix", "cartao", "dinheiro"] }
+      },
+      "required": ["cliente_id", "valor", "data", "tipo_pagamento"]
+    },
+    "User": {
+      "title": "Usuário",
+      "description": "Perfil do usuário do sistema",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "user"] }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/clientes/{clienteId}": { "schema": "Cliente", "description": "Coleção de clientes" },
+    "/estoque/{produtoId}": { "schema": "Produto", "description": "Coleção de produtos em estoque" },
+    "/ordens_servico/{osId}": { "schema": "OrdemServico", "description": "Coleção de ordens de serviço" },
+    "/financeiro/{transacaoId}": { "schema": "Financeiro", "description": "Coleção de registros financeiros" },
+    "/users/{userId}": { "schema": "User", "description": "Coleção de usuários e permissões" }
+  }
+}
